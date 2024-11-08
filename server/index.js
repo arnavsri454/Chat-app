@@ -1,7 +1,8 @@
-import express from 'express';
+ import express from 'express';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cors from 'cors';  // Ensure to use the cors package
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +11,18 @@ const PORT = process.env.PORT || 3501;
 const ADMIN = 'Admin';
 
 const app = express();
+
+// Enable CORS for multiple origins (local dev and remote production)
+app.use(cors({
+    origin: [
+        'http://127.0.0.1:5500',         // Local dev URL
+        'http://localhost:5500',          // Local dev URL
+        'https://chat-app-jwaw.onrender.com'  // Deployed frontend URL
+    ],
+    methods: ['GET', 'POST'],             // Allowed HTTP methods
+    allowedHeaders: ['Content-Type'],     // Allowed headers
+    credentials: true                     // Allow credentials (cookies, etc.)
+}));
 
 // Serve static files (public folder)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,13 +43,16 @@ const UsersState = {
 // Set up Socket.IO with CORS configuration
 const io = new Server(expressServer, {
     cors: {
-        origin: ['http://127.0.0.1:5500', 'http://localhost:5500'], // Allow these origins
-        methods: ['GET', 'POST'],  // Allowed HTTP methods
-        allowedHeaders: ['Content-Type'],  // Allowed headers
-        credentials: true  // Allow credentials (cookies, etc.)
+        origin: [
+            'http://127.0.0.1:5500',         // Local dev URL
+            'http://localhost:5500',          // Local dev URL
+            'https://chat-app-jwaw.onrender.com'  // Deployed frontend URL
+        ],
+        methods: ['GET', 'POST'],             // Allowed HTTP methods
+        allowedHeaders: ['Content-Type'],     // Allowed headers
+        credentials: true                     // Allow credentials (cookies, etc.)
     }
 });
-
 
 // Listen for connections
 io.on('connection', socket => {
