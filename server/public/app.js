@@ -1,4 +1,4 @@
-const socket = io('http://localhost:3501');  // Corrected WebSocket connection URL
+const socket = io('https://chat-app-jwaw.onrender.com');  // Corrected WebSocket connection URL
 
 const msgInput = document.querySelector('#message');
 const nameInput = document.querySelector('#name');
