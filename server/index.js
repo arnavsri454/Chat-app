@@ -156,3 +156,61 @@ function getUsersInRoom(room) {
 function getAllActiveRooms() {
     return Array.from(new Set(UsersState.users.map(user => user.room)));
 }
+// In-memory message storage
+const roomMessages = {};  // { roomName: [{ name, text, time }] }
+
+io.on('connection', socket => {
+    console.log(`User ${socket.id} connected`);
+
+    // Send message history to the user upon joining a room
+    socket.on('enterRoom', ({ name, room }) => {
+        const prevRoom = getUser(socket.id)?.room;
+
+        if (prevRoom) {
+            socket.leave(prevRoom);
+            io.to(prevRoom).emit('message', buildMsg(ADMIN, `${name} has left the room`));
+        }
+
+        const user = activateUser(socket.id, name, room);
+
+        if (prevRoom) {
+            io.to(prevRoom).emit('userList', { users: getUsersInRoom(prevRoom) });
+        }
+
+        socket.join(user.room);
+        socket.emit('message', buildMsg(ADMIN, `You have joined the ${user.room} chat room`));
+        socket.broadcast.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has joined the room`));
+        io.to(user.room).emit('userList', { users: getUsersInRoom(user.room) });
+        io.emit('roomList', { rooms: getAllActiveRooms() });
+
+        // Send message history to the new user
+        socket.emit('messageHistory', roomMessages[room] || []);
+    });
+
+    socket.on('message', ({ name, text }) => {
+        const room = getUser(socket.id)?.room;
+        if (room) {
+            const message = buildMsg(name, text);
+
+            // Save the message to the room's history
+            if (!roomMessages[room]) {
+                roomMessages[room] = [];
+            }
+            roomMessages[room].push(message);
+
+            // Send the message to everyone in the room
+            io.to(room).emit('message', message);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        const user = getUser(socket.id);
+        if (user) {
+            userLeavesApp(socket.id);
+            io.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has left the room`));
+            io.to(user.room).emit('userList', { users: getUsersInRoom(user.room) });
+            io.emit('roomList', { rooms: getAllActiveRooms() });
+        }
+        console.log(`User ${socket.id} disconnected`);
+    });
+});
