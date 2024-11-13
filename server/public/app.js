@@ -117,3 +117,38 @@ function showRooms(rooms) {
         });
     }
 }
+// Receive message history and display it when joining a room
+socket.on("messageHistory", (messages) => {
+    messages.forEach(displayMessage);
+});
+
+// Listen for individual messages
+socket.on("message", (data) => {
+    activity.textContent = "";
+    displayMessage(data);
+});
+
+// Function to display a message
+function displayMessage(data) {
+    const { name, text, time } = data;
+    const li = document.createElement('li');
+    li.className = 'post';
+    if (name === nameInput.value) li.classList.add('post--left');
+    if (name !== nameInput.value && name !== 'Admin') li.classList.add('post--right');
+    
+    if (name !== 'Admin') {
+        li.innerHTML = `
+            <div class="post__header ${name === nameInput.value
+                ? 'post__header--user'
+                : 'post__header--reply'}">
+                <span class="post__header--name">${name}</span>
+                <span class="post__header--time">${time}</span>
+            </div>
+            <div class="post__text">${text}</div>`;
+    } else {
+        li.innerHTML = `<div class="post__text">${text}</div>`;
+    }
+    
+    document.querySelector('.chat-display').appendChild(li);
+    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+}
