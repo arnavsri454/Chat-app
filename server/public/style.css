@@ -1,4 +1,4 @@
- /* Reset and global styles */
+  /* Reset and global styles */
 * {
     margin: 0;
     padding: 0;
@@ -90,6 +90,14 @@ main {
     border-radius: 12px 12px 0 0;
 }
 
+/* Image styling within messages */
+.shared-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
 /* Typing Indicator */
 .activity {
     padding: 10px;
@@ -99,7 +107,7 @@ main {
 }
 
 /* Message Form */
-.form-msg, .form-join {
+.form-msg, .form-join, .form-upload {
     display: flex;
     padding: 10px;
     border-top: 1px solid #ddd;
@@ -110,14 +118,15 @@ main {
     border-bottom: 1px solid #ddd;
 }
 
-input[type="text"], button {
+/* Input fields */
+input[type="text"], input[type="file"], button {
     padding: 8px;
     border-radius: 8px;
     border: 1px solid #ddd;
     outline: none;
 }
 
-input[type="text"] {
+input[type="text"], input[type="file"] {
     flex-grow: 1;
     margin-right: 8px;
 }
@@ -131,4 +140,10 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+/* Additional styling for image upload button */
+.form-upload button {
+    flex-grow: 0;
+    padding: 8px 12px;
 }
