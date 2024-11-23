@@ -19,10 +19,21 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}_${file.originalname}`);
     }
 });
-const upload = multer({ storage });
 
-// Enable CORS
-app.use(cors({
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(file.mimetype)) {
+            return cb(new Error('Invalid file type. Only JPEG, PNG, and GIF are allowed.'));
+        }
+        cb(null, true);
+    }
+});
+
+// CORS Configuration
+const corsOptions = {
     origin: [
         'http://127.0.0.1:5500',
         'http://localhost:5500',
@@ -31,7 +42,9 @@ app.use(cors({
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Serve static files (public folder)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,58 +63,22 @@ const expressServer = app.listen(PORT, () => {
 });
 
 // Initialize Socket.io
-const io = new Server(expressServer, {
-    cors: {
-        origin: [
-            'http://127.0.0.1:5500',
-            'http://localhost:5500',
-            'https://chat-app-jwaw.onrender.com'
-        ],
-        methods: ['GET', 'POST'],
-        allowedHeaders: ['Content-Type'],
-        credentials: true
-    }
-});
+const io = new Server(expressServer, { cors: corsOptions });
 
-// Main code for managing chat
-io.on('connection', (socket) => {
-    console.log(`User ${socket.id} connected`);
-
-    // Handle regular text messages
-    socket.on('message', ({ name, text }) => {
-        const room = getUser(socket.id)?.room;
-        if (room) {
-            io.to(room).emit('message', buildMsg(name, text));
-        }
-    });
-
-    // Handle image messages
-    socket.on('imageMessage', ({ name, imageUrl }) => {
-        const room = getUser(socket.id)?.room;
-        if (room) {
-            io.to(room).emit('message', {
-                name,
-                text: `<img src="${imageUrl}" alt="Shared image" class="shared-image"/>`,
-                time: new Date().toLocaleTimeString()
-            });
-        }
-    });
-
-    socket.on('disconnect', () => {
-        console.log(`User ${socket.id} disconnected`);
-    });
-});
-
-function buildMsg(name, text) {
-    return {
-        name,
-        text,
-        time: new Date().toLocaleTimeString()
-    };
-}
+// In-memory storage for users
+const users = new Map();
 
 function getUser(id) {
-    // Implement function to get user details
+    return users.get(id);
 }
 
- 
+function addUser(id, room) {
+    users.set(id, { room });
+}
+
+function removeUser(id) {
+    users.delete(id);
+}
+
+// Main code for managing chat
+io.on('con
